@@ -42,9 +42,7 @@ input[type=text] {
 import { downloadFile } from "https://js.sabae.cc/downloadFile.js";
 
 const makeDotSVG = (ptn, dotw = 10, color = "black") => {
-  if (ptn.length == 0) {
-    return;
-  }
+  if (ptn.length == 0) return;
   const ns = "http://www.w3.org/2000/svg";
   const cr = (tag) => document.createElementNS(ns, tag);
   const svg = cr("svg");
