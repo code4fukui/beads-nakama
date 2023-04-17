@@ -1,0 +1,173 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+
+</head><body>
+<h1>dot2svg</h1>
+
+<input type=range id=rangew value=8 min=2 max=100>
+<input type=text id=spanw> x <input type=text id=spanh>
+<input type=range id=rangeh value=8 min=2 max=100>
+
+<button id=btnleft>←</button>
+<button id=btnright>→</button>
+<button id=btnup>↑</button>
+<button id=btndown>↓</button>
+<br>
+
+<main id=main></main>
+<br>
+<textarea id=svgout></textarea><br>
+<div id=svgdemo></div>
+<button id=btnsvg>download SVG</button>
+
+<hr>
+<a href=https://github.com/code4fukui/dotsvgmaker/>src on GitHub</a><br>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+body > * {
+  margin: .5em 0;
+}
+textarea {
+  width: 100%;
+  height: 6em;
+}
+input[type=text] {
+  width: 3em;
+}
+</style>
+
+<script type="module">
+import { downloadFile } from "https://js.sabae.cc/downloadFile.js";
+
+const makeDotSVG = (ptn, dotw = 10, color = "black") => {
+  if (ptn.length == 0) {
+    return;
+  }
+  const ns = "http://www.w3.org/2000/svg";
+  const cr = (tag) => document.createElementNS(ns, tag);
+  const svg = cr("svg");
+  svg.setAttribute("xmlns", ns);
+  const w = ptn[0].length;
+  const h = ptn.length;
+  svg.setAttribute("viewBox", `0 0 ${dotw * w} ${dotw * h}`);
+  const g = cr("g");
+  svg.appendChild(g);
+  g.setAttribute("fill", color);
+  for (let i = 0; i < h; i++) {
+    const s = ptn[i];
+    for (let j = 0; j < w; j++) {
+      if (s[j] == "1") {
+        const rect = cr("rect");
+        rect.setAttribute("x", j * dotw);
+        rect.setAttribute("y", i * dotw);
+        rect.setAttribute("width", dotw);
+        rect.setAttribute("height", dotw);
+        g.appendChild(rect);
+      }
+    }
+  }
+  return svg;
+};
+const showSVG = (ptn) => {
+  const svg = makeDotSVG(ptn);
+  svgout.value = svg.outerHTML;
+  svgdemo.innerHTML = "";
+  svgdemo.appendChild(svg);
+};
+const getPattern = () => {
+  if (main.children.length == 0) {
+    return [];
+  }
+  const w = main.w;
+  const h = main.h;
+  const res = [];
+  for (let i = 0; i < h; i++) {
+    const s = [];
+    for (let j = 0; j < w; j++) {
+      s.push(main.childNodes[i * w + j].style.background == "black" ? "1" : "0");
+    }
+    res.push(s.join(""));
+  }
+  return res;
+};
+const clearPattern = () => {
+  const c = main.childNodes;
+  for (let i = 0; i < c.length; i++) {
+    c[i].style.background = "white";
+  }
+};
+const setPattern = (ptn, offx = 0, offy = 0) => {
+  if (ptn.length == 0) {
+    return;
+  }
+  clearPattern();
+  const wd = spanw.value;
+  const hd = spanh.value;
+  const w = ptn[0].length;
+  const h = ptn.length;
+  for (let i = 0; i < h; i++) {
+    const s = ptn[i];
+    for (let j = 0; j < w; j++) {
+      const x = j + offx;
+      const y = i + offy;
+      if (x >= 0 && x < wd && y >= 0 && y < hd) {
+        main.childNodes[y * wd + x].style.background = s[j] == "1" ? "black" : "white";
+      }
+    }
+  }
+};
+const show = () => showSVG(getPattern());
+
+rangew.oninput = rangeh.oninput = () => {
+  const data = getPattern();
+  const w = spanw.value = rangew.value;
+  const h = spanh.value = rangeh.value;
+  main.style.display = "inline-grid";
+  main.style.width = "100%";
+  main.style.gridTemplateColumns = `repeat(${w}, 1fr)`;
+  main.style.gridTemplateRows = `repeat(${h}, 1fr)`;
+  main.w = w;
+  main.h = h;
+  main.innerHTML = "";
+  const borderColor = "#777";
+  main.style.borderBottom = "1px solid " + borderColor;
+  main.style.borderRight = "1px solid " + borderColor;
+  for (let i = 0; i < w * h; i++) {
+    const c = document.createElement("span");
+    c.style.borderTop = "1px solid " + borderColor;
+    c.style.borderLeft = "1px solid " + borderColor;
+    c.style.background = "white";
+    c.style.aspectRatio = "1";
+    main.appendChild(c);
+    c.onclick = () => {
+      c.style.background = c.style.background == "black" ? "white" : "black";
+      show();
+    };
+  }
+  setPattern(data);
+};
+rangew.oninput();
+spanw.onchange = spanh.onchange = () => {
+  rangew.value = spanw.value;
+  rangeh.value = spanh.value;
+  rangew.oninput();
+};
+
+const move = (x, y) => {
+  setPattern(getPattern(), x, y);
+  show();
+};
+btnup.onclick = () => move(0, -1);
+btndown.onclick = () => move(0, 1);
+btnleft.onclick = () => move(-1, 0);
+btnright.onclick = () => move(1, 0);
+
+btnsvg.onclick = () => {
+  const svg = svgdemo.childNodes[0];
+  if (!svg) return;
+  //const ssvg = `<svg xmlns="http://www.w3.org/2000/svg">${svg.innerHTML}</svg>`;
+  downloadFile("dot.svg", new TextEncoder().encode(svgdemo.innerHTML));
+};
+</script>
