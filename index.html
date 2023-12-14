@@ -20,6 +20,7 @@
 <button id=btnsvg>download SVG</button>
 
 <hr>
+LIB: <a href=https://github.com/code4fukui/dot2svg/>dot2svg</a><br>
 <a href=https://github.com/code4fukui/dotsvgmaker/>src on GitHub</a><br>
 
 <style>
@@ -40,6 +41,7 @@ input[type=text] {
 
 <script type="module">
 import { downloadFile } from "https://js.sabae.cc/downloadFile.js";
+import { dot2svg } from "https://code4fukui.github.io/dot2svg/dot2svg.js";
 
 const makeDotSVG = (ptn, dotw = 10, color = "black") => {
   if (ptn.length == 0) return;
@@ -53,6 +55,8 @@ const makeDotSVG = (ptn, dotw = 10, color = "black") => {
   const g = cr("g");
   svg.appendChild(g);
   g.setAttribute("fill", color);
+  g.innerHTML = dot2svg(ptn.map(i => i.split("").map(i => parseInt(i))), dotw);
+  /*
   for (let i = 0; i < h; i++) {
     const s = ptn[i];
     for (let j = 0; j < w; j++) {
@@ -66,6 +70,7 @@ const makeDotSVG = (ptn, dotw = 10, color = "black") => {
       }
     }
   }
+  */
   return svg;
 };
 const showSVG = (ptn) => {
@@ -165,7 +170,7 @@ btnright.onclick = () => move(1, 0);
 btnsvg.onclick = () => {
   const svg = svgdemo.childNodes[0];
   if (!svg) return;
-  //const ssvg = `<svg xmlns="http://www.w3.org/2000/svg">${svg.innerHTML}</svg>`;
+  //const ssvg = `<svg xmlns="http://www.w3.org/2000/svg">${svg.innerHTML}</ svg>`;
   downloadFile("dot.svg", new TextEncoder().encode(svgdemo.innerHTML));
 };
 </script>
