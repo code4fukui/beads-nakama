@@ -3,7 +3,7 @@
 </head><body>
 <h1>dotsvgmaker</h1>
 
-<input type=range id=rangew value=8 min=2 max=100>
+<input type=range id=rangew value=24 min=2 max=100>
 <input type=text id=spanw> x <input type=text id=spanh>
 <input type=range id=rangeh value=8 min=2 max=100>
 
@@ -11,6 +11,7 @@
 <button id=btnright>→</button>
 <button id=btnup>↑</button>
 <button id=btndown>↓</button>
+<input type=range id=rangeroundr value=0 min=0 max=5 step=0.1>
 <br>
 
 <main id=main></main>
@@ -55,7 +56,8 @@ const makeDotSVG = (ptn, dotw = 10, color = "black") => {
   const g = cr("g");
   svg.appendChild(g);
   g.setAttribute("fill", color);
-  g.innerHTML = dot2svg(ptn.map(i => i.split("").map(i => parseInt(i))), dotw);
+  const roundr = rangeroundr.value;
+  g.innerHTML = dot2svg(ptn.map(i => i.split("").map(i => parseInt(i))), dotw, roundr);
   /*
   for (let i = 0; i < h; i++) {
     const s = ptn[i];
@@ -122,6 +124,8 @@ const setPattern = (ptn, offx = 0, offy = 0) => {
   }
 };
 const show = () => showSVG(getPattern());
+
+rangeroundr.oninput = () => show();
 
 rangew.oninput = rangeh.oninput = () => {
   const data = getPattern();
