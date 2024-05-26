@@ -207,13 +207,17 @@ const initialData = {
   palette: getColors(),
 };
 
-const setData = (sdata) => {
+const setData = (sdata, setwidth = false) => {
   const data = parseData(sdata);
   console.log("data", data, sdata);
   if (!data) return;
 
   const w0 = data.w;
   const h0 = data.h;
+  if (setwidth) {
+    spanw.value = w0;
+    spanh.value = h0;
+  }
   const w = parseInt(spanw.value);
   const h = parseInt(spanh.value);
   main.style.display = "inline-grid";
@@ -258,7 +262,7 @@ spanw.onchange();
 
 const setHash = () => location.hash = getData();
 const hash = location.hash.substring(1);
-setData(hash);
+setData(hash, true);
 
 const move = (x, y) => {
   setPattern(getPattern(), x, y);
