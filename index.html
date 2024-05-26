@@ -182,9 +182,6 @@ const setPattern = (ptn, offx = 0, offy = 0, w0, h0) => {
   const h = parseInt(spanh.value);
   w0 ||= w;
   h0 ||= h;
-  console.log(w, h, w0, h0)
-  //const w = ptn[0].length;
-  //const h = ptn.length;
   for (let i = 0; i < h0; i++) {
     for (let j = 0; j < w0; j++) {
       const x = (j + offx + w0) % w0;
@@ -209,7 +206,6 @@ const initialData = {
 
 const setData = (sdata, setwidth = false) => {
   const data = parseData(sdata);
-  console.log("data", data, sdata);
   if (!data) return;
 
   const w0 = data.w;
