@@ -1,30 +1,29 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
-<title>dotsvgmaker</title>
+<title>ビーズなかま / BeadsNakama</title>
 </head><body>
-<h1>dotsvgmaker</h1>
+<h1>ビーズなかま / BeadsNakama</h1>
 
-<input type=range id=rangew value=24 min=2 max=100>
-<input type=text id=spanw> x <input type=text id=spanh>
-<input type=range id=rangeh value=8 min=2 max=100>
+<input type=text id=spanw value=12> x <input type=text id=spanh value=12>
 
 <button id=btnleft>←</button>
 <button id=btnright>→</button>
 <button id=btnup>↑</button>
 <button id=btndown>↓</button>
-<input type=range id=rangeroundr value=0 min=0 max=5 step=0.1>
 <br>
 
 <main id=main></main>
+<div id=colors></div>
 <br>
-<textarea id=svgout></textarea><br>
-<div id=svgdemo></div>
-<button id=btnsvg>download SVG</button>
+<button id=btnclear>全クリア / All Clear</button>
 
 <hr>
-LIB: <a href=https://github.com/code4fukui/dot2svg/>dot2svg</a><br>
-<a href=https://github.com/code4fukui/dotsvgmaker/>src on GitHub</a><br>
+<a href=https://github.com/code4fukui/beads-nakama/>src on GitHub</a><br>
 
 <style>
+body {
+  font-family: sans-serif;
+  text-align: center;
+}
 * {
   box-sizing: border-box;
 }
@@ -37,100 +36,181 @@ textarea {
 }
 input[type=text] {
   width: 3em;
+  font-size: 16px;
+}
+button {
+  padding: .5em;
+}
+#colors {
+  white-space: nowrap;
+  overflow: scroll;
+}
+#colors > span {
+  display: inline-block;
+  padding: .1em;
+}
+#colors > span > span {
+  display: inline-block;
+  font-size: 150%;
+  margin: 0 0.2em 0 0.2em;
+}
+a {
+  color: gray !important;
 }
 </style>
 
 <script type="module">
-import { downloadFile } from "https://js.sabae.cc/downloadFile.js";
-import { dot2svg } from "https://code4fukui.github.io/dot2svg/dot2svg.js";
+import { PANCAKE_PALETTE } from "https://ichigojam.github.io/ns-pancake/PANCAKE_PALETTE.mjs"
 
-const makeDotSVG = (ptn, dotw = 10, color = "black") => {
-  if (ptn.length == 0) return;
-  const ns = "http://www.w3.org/2000/svg";
-  const cr = (tag) => document.createElementNS(ns, tag);
-  const svg = cr("svg");
-  svg.setAttribute("xmlns", ns);
-  const w = ptn[0].length;
-  const h = ptn.length;
-  svg.setAttribute("viewBox", `0 0 ${dotw * w} ${dotw * h}`);
-  const g = cr("g");
-  svg.appendChild(g);
-  g.setAttribute("fill", color);
-  const roundr = rangeroundr.value;
-  g.innerHTML = dot2svg(ptn.map(i => i.split("").map(i => parseInt(i))), dotw, roundr);
-  /*
-  for (let i = 0; i < h; i++) {
-    const s = ptn[i];
-    for (let j = 0; j < w; j++) {
-      if (s[j] == "1") {
-        const rect = cr("rect");
-        rect.setAttribute("x", j * dotw);
-        rect.setAttribute("y", i * dotw);
-        rect.setAttribute("width", dotw);
-        rect.setAttribute("height", dotw);
-        g.appendChild(rect);
-      }
+const cr = (tag, parent) => {
+  const p = document.createElement(tag);
+  if (parent) parent.appendChild(p);
+  return p;
+};
+
+const hex2 = (n) => (n < 0x10 ? "0" : "") + n.toString(16);
+const rgb = (array) => "#" + array.map(i => hex2(i)).join("");
+
+let selidx = 0;
+const getColor = (idx = selidx) => {
+  if (idx == -1) return "white";
+  const cc = document.querySelectorAll("#colors input");
+  return cc[idx].value;
+};
+const getColors = () => {
+  const cc = document.querySelectorAll("#colors input");
+  const res = [];
+  for (const c of cc) {
+    res.push(c.value.substring(1));
+  }
+  return res.join("");
+};
+const setPalette = (palette) => {
+  if (!palette) return;
+  const cc = document.querySelectorAll("#colors input");
+  for (let i = 0; i < palette.length; i++) {
+    const c = cc[i];
+    c.value = "#" + palette[i];
+  }
+};
+
+let idx = 0;
+for (const p of PANCAKE_PALETTE) {
+  const div = cr("span", colors);
+  cr("span", div).textContent = ++idx;
+  const inp = cr("input", div);
+  inp.type = "color";
+  inp.value = rgb(p);
+  div.style.backgroundColor = idx == 1 ? "lightgray" : "white";
+  div.idx = idx - 1;
+  div.onclick = () => {
+    const cc = document.querySelectorAll("#colors > span");
+    for (const c of cc) {
+      c.style.backgroundColor = "white";
     }
-  }
-  */
-  return svg;
-};
-const showSVG = (ptn) => {
-  const svg = makeDotSVG(ptn);
-  svgout.value = svg.outerHTML;
-  svgdemo.innerHTML = "";
-  svgdemo.appendChild(svg);
-};
+    div.style.backgroundColor = "lightgray";
+    selidx = div.idx;
+  };
+}
+
 const getPattern = () => {
-  if (main.children.length == 0) {
-    return [];
-  }
   const w = main.w;
   const h = main.h;
   const res = [];
   for (let i = 0; i < h; i++) {
     const s = [];
     for (let j = 0; j < w; j++) {
-      s.push(main.childNodes[i * w + j].style.background == "black" ? "1" : "0");
+      const idx = main.childNodes[i * w + j].idx;
+      if (idx == -1) {
+        s.push("_");
+      } else {
+        s.push(idx.toString(16));
+      }
     }
     res.push(s.join(""));
   }
-  return res;
+  return res.join("");
 };
+
+const getData = () => {
+  if (main.childNodes.length == 0) {
+    return null;
+  }
+  const w = main.w;
+  const h = main.h;
+  const ptn = getPattern();
+  return "bn1," + w + "," + h + "," + ptn + "," + getColors();
+};
+
+const parseData = (data) => {
+  if (!data) {
+    console.log("data is null");
+    return null;
+  }
+  const ss = data.split(",");
+  const ver = ss[0];
+  if (ver != "bn1") {
+    console.log("can't parse");
+    return null;
+  }
+  const w = parseInt(ss[1]);
+  const h = parseInt(ss[2]);
+  const pattern = ss[3];
+  const p = ss[4];
+  const palette = [];
+  for (let i = 0; i < p.length; i += 6) {
+    palette.push(p.substring(i, i + 6));
+  }
+  return { w, h, pattern, palette };
+};
+
 const clearPattern = () => {
   const c = main.childNodes;
   for (let i = 0; i < c.length; i++) {
-    c[i].style.background = "white";
+    c[i].style.borderColor = "white";
+    c[i].idx = -1;
   }
 };
-const setPattern = (ptn, offx = 0, offy = 0) => {
-  if (ptn.length == 0) {
-    return;
-  }
+const setPattern = (ptn, offx = 0, offy = 0, w0, h0) => {
   clearPattern();
-  const wd = spanw.value;
-  const hd = spanh.value;
-  const w = ptn[0].length;
-  const h = ptn.length;
-  for (let i = 0; i < h; i++) {
-    const s = ptn[i];
-    for (let j = 0; j < w; j++) {
-      const x = j + offx;
-      const y = i + offy;
-      if (x >= 0 && x < wd && y >= 0 && y < hd) {
-        main.childNodes[y * wd + x].style.background = s[j] == "1" ? "black" : "white";
+  const w = parseInt(spanw.value);
+  const h = parseInt(spanh.value);
+  w0 ||= w;
+  h0 ||= h;
+  console.log(w, h, w0, h0)
+  //const w = ptn[0].length;
+  //const h = ptn.length;
+  for (let i = 0; i < h0; i++) {
+    for (let j = 0; j < w0; j++) {
+      const x = (j + offx + w0) % w0;
+      const y = (i + offy + h0) % h0;
+      if (x >= 0 && x < w && y >= 0 && y < h) {
+        const s = ptn ? ptn[i * w0 + j] : "_";
+        const c = main.childNodes[y * w + x];
+        const nc = parseInt(s, 16);
+        c.style.borderColor = s == "_" ? "white" : getColor(nc);
+        c.idx = s == "_" ? -1 : nc;
       }
     }
   }
 };
-const show = () => showSVG(getPattern());
 
-rangeroundr.oninput = () => show();
+const initialData = {
+  w: spanw.value,
+  h: spanh.value,
+  pattern: null,
+  palette: getColors(),
+};
 
-rangew.oninput = rangeh.oninput = () => {
-  const data = getPattern();
-  const w = spanw.value = rangew.value;
-  const h = spanh.value = rangeh.value;
+const setData = (sdata) => {
+  const data = parseData(sdata);
+  console.log("data", data, sdata);
+  if (!data) return;
+
+  const w0 = data.w;
+  const h0 = data.h;
+  const w = parseInt(spanw.value);
+  const h = parseInt(spanh.value);
   main.style.display = "inline-grid";
   main.style.width = "100%";
   main.style.gridTemplateColumns = `repeat(${w}, 1fr)`;
@@ -138,43 +218,66 @@ rangew.oninput = rangeh.oninput = () => {
   main.w = w;
   main.h = h;
   main.innerHTML = "";
-  const borderColor = "#777";
-  main.style.borderBottom = "1px solid " + borderColor;
-  main.style.borderRight = "1px solid " + borderColor;
+  const bw = (100 / w) * .3;
+  const borderColor = "white"; // "#777";
   for (let i = 0; i < w * h; i++) {
     const c = document.createElement("span");
-    c.style.borderTop = "1px solid " + borderColor;
-    c.style.borderLeft = "1px solid " + borderColor;
-    c.style.background = "white";
+
+    c.style.border = bw + "vw solid " + borderColor;
+    c.style.background = "lightgray";
     c.style.aspectRatio = "1";
+    c.style.borderRadius = "50%";
     main.appendChild(c);
+    c.idx = -1;
     c.onclick = () => {
-      c.style.background = c.style.background == "black" ? "white" : "black";
-      show();
+      if (c.idx == selidx) {
+        c.style.borderColor = "white";
+        c.idx = -1;
+      } else {
+        c.style.borderColor = getColor();
+        c.idx = selidx;
+      }
+      //
+      setHash();
     };
   }
-  setPattern(data);
+  setPalette(data.palette);
+  setPattern(data.pattern, 0, 0, w0, h0);
 };
-rangew.oninput();
+
 spanw.onchange = spanh.onchange = () => {
-  rangew.value = spanw.value;
-  rangeh.value = spanh.value;
-  rangew.oninput();
+  const data = getData() || "bn1," + spanw.value + "," + spanh.value + ",," + getColors();
+  setData(data);
 };
+spanw.onchange();
+
+const setHash = () => location.hash = getData();
+const hash = location.hash.substring(1);
+setData(hash);
 
 const move = (x, y) => {
   setPattern(getPattern(), x, y);
-  show();
 };
 btnup.onclick = () => move(0, -1);
 btndown.onclick = () => move(0, 1);
 btnleft.onclick = () => move(-1, 0);
 btnright.onclick = () => move(1, 0);
 
-btnsvg.onclick = () => {
-  const svg = svgdemo.childNodes[0];
-  if (!svg) return;
-  //const ssvg = `<svg xmlns="http://www.w3.org/2000/svg">${svg.innerHTML}</ svg>`;
-  downloadFile("dot.svg", new TextEncoder().encode(svgdemo.innerHTML));
+const refreshPalette = () => {
+  const c = main.childNodes;
+  for (let i = 0; i < c.length; i++) {
+    c[i].style.borderColor = getColor(c[i].idx);
+  }
+  setHash();
+};
+
+const cc = document.querySelectorAll("#colors input");
+for (const c of cc) {
+  c.oninput = () => refreshPalette();
+}
+
+btnclear.onclick = () => {
+  clearPattern();
+  setHash();
 };
 </script>

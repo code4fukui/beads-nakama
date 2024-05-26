@@ -1,5 +1,3 @@
-# dotsvgmaker
+# ビーズなかま / BeadsNakama
  
-pixel art to SVG
-
-- https://code4fukui.github.io/dotsvgmaker/
+- https://code4fukui.github.io/beads-nakama/
