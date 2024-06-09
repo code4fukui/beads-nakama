@@ -9,6 +9,11 @@
 <button id=btnright>→</button>
 <button id=btnup>↑</button>
 <button id=btndown>↓</button>
+
+<select id=seltype>
+  <option value=box>四角形</option>
+  <option value=hex>六角形</option>
+</select>
 <br>
 
 <main id=main></main>
@@ -37,6 +42,27 @@ body > * {
 textarea {
   width: 100%;
   height: 6em;
+}
+.box {
+  width: 100%;
+}
+.hex {
+  margin-top: 50px;
+  x-width: 100px;
+}
+.hex > span:nth-child(odd) {
+  /* 100px is the width of a hexagon, 0.433 is (sqrt(3)/2) / 2 */
+  margin-top: calc(100px * -0.433);
+  width: 100px;/*calc(50px * 0.886);*/
+}
+.hex > span {
+  margin-bottom: 10px;
+  border-width: 30px !important;
+}
+.hex > span:nth-child(even) {
+  margin-top: 0;
+  x-width: calc(50px * 0.886);
+  width: 100%;
 }
 input[type=text] {
   width: 3em;
@@ -141,12 +167,28 @@ const getData = () => {
   if (main.childNodes.length == 0) {
     return null;
   }
+  const type = main.patternType || "box";
   const w = main.w;
   const h = main.h;
   const ptn = getPattern();
-  return "bn1," + w + "," + h + "," + ptn + "," + getColors();
+  //return "bn1," + w + "," + h + "," + ptn + "," + getColors();
+  return "bn2," + type + "," + w + "," + h + "," + ptn + "," + getColors();
 };
 
+/*
+format:
+  ver = bn1 (box)
+    w
+    h
+    pattern
+    palette
+  ver = bn2 (with type)
+    type (box or hex)
+    w
+    h
+    pattern
+    palette
+*/
 const parseData = (data) => {
   if (!data) {
     console.log("data is null");
@@ -154,20 +196,32 @@ const parseData = (data) => {
   }
   const ss = data.split(",");
   const ver = ss[0];
-  if (ver != "bn1") {
+  if (ver == "bn1") {
+    const w = parseInt(ss[1]);
+    const h = parseInt(ss[2]);
+    const pattern = ss[3];
+    const p = ss[4];
+    const palette = [];
+    for (let i = 0; i < p.length; i += 6) {
+      palette.push(p.substring(i, i + 6));
+    }
+    return { type: "box", w, h, pattern, palette };
+  } else if (ver == "bn2") {
+    const type = ss[1];
+    const w = parseInt(ss[2]);
+    const h = parseInt(ss[3]);
+    const pattern = ss[4];
+    const p = ss[5];
+    const palette = [];
+    for (let i = 0; i < p.length; i += 6) {
+      palette.push(p.substring(i, i + 6));
+    }
+    return { type, w, h, pattern, palette };
+  } else {
     console.log("can't parse");
     return null;
   }
-  const w = parseInt(ss[1]);
-  const h = parseInt(ss[2]);
-  const pattern = ss[3];
-  const p = ss[4];
-  const palette = [];
-  for (let i = 0; i < p.length; i += 6) {
-    palette.push(p.substring(i, i + 6));
-  }
-  return { w, h, pattern, palette };
-};
+};  
 
 const clearPattern = () => {
   const c = main.childNodes;
@@ -217,13 +271,24 @@ const setData = (sdata, setwidth = false) => {
   const w = parseInt(spanw.value);
   const h = parseInt(spanh.value);
   main.style.display = "inline-grid";
-  main.style.width = "100%";
-  main.style.gridTemplateColumns = `repeat(${w}, 1fr)`;
-  main.style.gridTemplateRows = `repeat(${h}, 1fr)`;
+  //main.style.width = "100%";
+  console.log(data.type)
+  main.className = data.type;
+  if (data.type == "hex") {
+    main.style.gridTemplateColumns = `repeat(${w}, 1fr)`;
+    //main.style.gridTemplateRows = `repeat(${h}, 1fr)`;
+    //main.style.gridAutoRows = `calc(1fr * 0.886)`;
+  } else {
+    main.style.gridTemplateColumns = `repeat(${w}, 1fr)`;
+    main.style.gridTemplateRows = `repeat(${h}, 1fr)`;
+  }
   main.w = w;
   main.h = h;
+  main.patternType = data.type;
+  seltype.value = data.type;
   main.innerHTML = "";
-  const bw = (100 / w) * .3;
+  const bw = (100 / w) * .3; // (data.type == "box" ? .1 : .2);
+  //const bw = (100 / w) * .2;
   const borderColor = "white"; // "#777";
   for (let i = 0; i < w * h; i++) {
     const c = document.createElement("span");
@@ -284,5 +349,14 @@ for (const c of cc) {
 btnclear.onclick = () => {
   clearPattern();
   setHash();
+};
+
+seltype.onchange = () => {
+  const ptn = getData();
+  console.log(ptn);
+  const t = ptn.split(",");
+  t[1] = seltype.value;  
+  const ptn2 = t.join(",");
+  setData(ptn2);
 };
 </script>
